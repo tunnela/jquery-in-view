@@ -127,6 +127,7 @@
 			}
 			checking = false;
 		};
+
 		attach(element);
 	}
 
@@ -135,8 +136,8 @@
 		elements = this.each(function() {
 			var id = $(this).data('in-view'), instance = null;
 
-			if (id === undefined) {
-				id = instanceCount++;
+			if (!id || typeof instances[id] === undefined) {
+				id = ++instanceCount;
 				$(this).data('in-view', id);
 			} else {
 				instance = instances[id] || null;
