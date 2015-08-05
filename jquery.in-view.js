@@ -143,13 +143,13 @@
 		elements = this.each(function() {
 			var id = $(this).data('in-view'), instance = null;
 
-			if (!id || typeof instances[id] === undefined) {
+			if (!id || typeof instances[id] === 'undefined') {
 				id = ++instanceCount;
 				$(this).data('in-view', id);
 			} else {
 				instance = instances[id] || null;
 			}
-			if (instance === null || typeof options !== 'undefined') {
+			if (instance === null || !options) {
 				instance = new InView(this, options);
 				instances[id] = instance;
 			} else {
