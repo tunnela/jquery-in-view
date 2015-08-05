@@ -1,7 +1,6 @@
 /**
  * In View (jQuery/Zepto) plugin for detecting HTML elements in view or out of view.
  *
- * @version 1.0.0
  * @copyright 2015, Lauri Tunnela (http://tunne.la)
  * @license http://tunne.la/MIT.txt The MIT License
  */
@@ -56,15 +55,28 @@
 	function InView(element, options) {
 		var $element = $(element),
 		element = $element.get(0),
+		data = function(key, defaultValue) {
+			var value = $element.data("iv-" + key);
+
+			if (value === undefined) {
+				value = defaultValue;
+			}
+			return value;
+		},
+		func = function(value, wrap) {
+			wrap = wrap || false;
+			return $.isFunction(value) ? value.apply(element) : 
+			(wrap ? $(value) : value);
+		},
 		visible = null,
 		checking = false,
 		count = 0,
 		defaults = {
-			count: $element.data("iv-count") === undefined ? 1 : parseInt($element.data("iv-count")),
-			classVisible: $element.data("iv-class-visible") || "in-view",
-			classHidden: $element.data("iv-class-hidden") || "out-of-view",
-			classInitial: $element.data("iv-class-initial") || "initial-view",
-			target: $element.data("iv-target") || element
+			count: parseInt(data("count", 1)),
+			classVisible: data("visible", "in-view"),
+			classHidden: data("hidden", "out-of-view"),
+			classInitial: data("initial", "initial-view"),
+			target: data("target", element)
 		};
 		options = $.extend({}, defaults, options);
 
@@ -80,8 +92,7 @@
 			}
 			checking = true;
 			
-			var classInitial = $.isFunction(options.classInitial) ? 
-			options.classInitial.apply(element) : options.classInitial;
+			var classInitial = func(options.classInitial);
 
 			$element.removeClass(classInitial);
 
@@ -90,12 +101,9 @@
 					$element.trigger('in-view');
 
 					if (!options.count || count++ < options.count) {
-						var classHidden = $.isFunction(options.classHidden) ? 
-						options.classHidden.apply(element) : options.classHidden,
-						classVisible = $.isFunction(options.classVisible) ? 
-						options.classVisible.apply(element) : options.classVisible,
-						$target = $.isFunction(options.target) ? 
-						options.target.apply(element) : $(options.target);
+						var classHidden = func(options.classHidden),
+						classVisible = func(options.classVisible),
+						$target = func(options.target, true);
 
 						if ($target.length) {
 							$target.addClass(classVisible).removeClass(classHidden);
@@ -109,13 +117,9 @@
 					$element.trigger('out-of-view');
 
 					if (!options.count || count < options.count) {
-
-						var classHidden = $.isFunction(options.classHidden) ? 
-						options.classHidden.apply(element) : options.classHidden,
-						classVisible = $.isFunction(options.classVisible) ? 
-						options.classVisible.apply(element) : options.classVisible,
-						$target = $.isFunction(options.target) ? 
-						options.target.apply(element) : $(options.target);
+						var classHidden = func(options.classHidden),
+						classVisible = func(options.classVisible),
+						$target = func(options.target, true);
 
 						if ($target.length) {
 							$target.addClass(classHidden).removeClass(classVisible);
@@ -164,7 +168,7 @@
 
 	$(function() {
 		if (!$('[data-iv-detect=false]').first().length) {
-			$('[data-in-view]').inView();
+			$('[data-iv]').inView();
 		}
 	});
 
