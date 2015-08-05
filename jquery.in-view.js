@@ -58,7 +58,10 @@
 		data = function(key, defaultValue) {
 			var value = $element.data("iv-" + key);
 
-			if (value === undefined) {
+			if (value == null) {
+				value = $element.attr("iv-" + key);
+			}
+			if (value == null) {
 				value = defaultValue;
 			}
 			return value;
@@ -167,8 +170,8 @@
 	};
 
 	$(function() {
-		if (!$('[data-iv-detect=false]').first().length) {
-			$('[data-iv]').inView();
+		if (!$('[data-iv-detect=false],[iv-detect=false]').first().length) {
+			$('[data-iv],[iv]').inView();
 		}
 	});
 
