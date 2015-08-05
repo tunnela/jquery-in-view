@@ -95,42 +95,42 @@
 			}
 			checking = true;
 			
-			var classInitial = func(options.classInitial);
+			var isVisible = visible;
+			visible = $.isVisible(element);
 
+			if (isVisible == visible) {
+				checking = false;
+				return;
+			}
+			var classInitial = func(options.classInitial);
 			$element.removeClass(classInitial);
 
-			if ($.isVisible(element)) {
-				if (visible == false || visible == null) {
-					$element.trigger('in-view');
+			if (visible) {
+				$element.trigger('in-view');
 
-					if (!options.count || count++ < options.count) {
-						var classHidden = func(options.classHidden),
-						classVisible = func(options.classVisible),
-						$target = func(options.target, true);
+				if (!options.count || count++ < options.count) {
+					var classHidden = func(options.classHidden),
+					classVisible = func(options.classVisible),
+					$target = func(options.target, true);
 
-						if ($target.length) {
-							$target.addClass(classVisible).removeClass(classHidden);
-						}
-						$element.trigger('in-view-pass');
+					if ($target.length) {
+						$target.addClass(classVisible).removeClass(classHidden);
 					}
+					$element.trigger('in-view-pass');
 				}
-				visible = true;
 			} else {
-				if (visible == true || visible == null) {
-					$element.trigger('out-of-view');
+				$element.trigger('out-of-view');
 
-					if (!options.count || count < options.count) {
-						var classHidden = func(options.classHidden),
-						classVisible = func(options.classVisible),
-						$target = func(options.target, true);
+				if (!options.count || count < options.count) {
+					var classHidden = func(options.classHidden),
+					classVisible = func(options.classVisible),
+					$target = func(options.target, true);
 
-						if ($target.length) {
-							$target.addClass(classHidden).removeClass(classVisible);
-						}
-						$element.trigger('out-of-view-pass');
+					if ($target.length) {
+						$target.addClass(classHidden).removeClass(classVisible);
 					}
+					$element.trigger('out-of-view-pass');
 				}
-				visible = false;
 			}
 			checking = false;
 		};
