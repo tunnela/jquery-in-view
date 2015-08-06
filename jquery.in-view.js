@@ -9,7 +9,7 @@
 
 	"use strict";
 
-	function elementInViewport(element, offset) {
+	function elementInViewport(element, inView, offset, direction) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
 		width = element.offsetWidth,
@@ -17,8 +17,12 @@
 		offsetLeft = 0,
 		offsetRight = 0,
 		offsetTop = 0,
-		offsetBottom = 0;
+		offsetBottom = 0,
+		inView = parseInt(inView) || 0;
 
+		if (inView > 1) {
+			inView /= 100;
+		}
 		if (typeof offset !== 'undefined') {
 			offsetLeft = offset.left;
 			offsetRight = offset.right;
@@ -31,7 +35,7 @@
 			left += element.offsetLeft;
 		}
 		return (
-			(top + offsetTop) < (window.pageYOffset + window.innerHeight) &&
+			(top + offsetTop + (inView * height)) < (window.pageYOffset + window.innerHeight) &&
 			(left + offsetLeft) < (window.pageXOffset + window.innerWidth) &&
 			(top + height + offsetBottom) > window.pageYOffset &&
 			(left + width + offsetRight) > window.pageXOffset
@@ -40,8 +44,25 @@
 	var	attached = false,
 	instanceCount = 0,
 	instances = [],
+	scrollOffset = { top: 0, left: 0 },
+	scrollDirection = 2,
 	$elements = $(),
 	monitor = function(e) {
+		var scrollTop = $(this).scrollTop(),
+		scrollLeft = $(this).scrollLeft();
+
+		if (scrollTop > scrollOffset.top) {
+			scrollDirection = 2;
+		} else if (scrollTop < scrollOffset.top) {
+			scrollDirection = 0;
+		} else if (scrollLeft > scrollOffset.left) {
+			scrollDirection = 1;
+		} else if (scrollLeft < scrollOffset.left) {
+			scrollDirection = 3;
+		}
+		scrollOffset.top = scrollTop;
+		scrollOffset.left = scrollLeft;
+
 		$elements.each(function() {
 			var instance = instances[$(this).data('in-view')];
 
@@ -90,7 +111,8 @@
 			classHidden: data("hidden", "out-of-view"),
 			classInitial: data("initial", "initial-view"),
 			target: data("target", element),
-			offset: data("offset", '0').split(/\s*,\s*/)
+			offset: data("offset", '0').split(/\s*,\s*/),
+			inView: parseInt(data("in-view", 0)) || 0
 		};
 		options = $.extend({}, defaults, options);
 
@@ -129,7 +151,7 @@
 			
 			var isVisible = visible;
 
-			visible = $.isVisible(element, options.offset);
+			visible = $.isVisible(element, options.inView, options.offset, scrollDirection);
 
 			if (isVisible == visible) {
 				checking = false;
@@ -198,8 +220,8 @@
 		}
 	};
 
-	$.isVisible = function(element, offset) {
-		return elementInViewport($(element).get(0), offset);
+	$.isVisible = function(element, inView, offset, direction) {
+		return elementInViewport($(element).get(0), inView, offset, direction);
 	};
 
 	$(function() {
