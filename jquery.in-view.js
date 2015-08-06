@@ -9,6 +9,24 @@
 
 	"use strict";
 
+	function elementInViewportPercentage(element) {
+		var top = element.offsetTop,
+		left = element.offsetLeft,
+		width = element.offsetWidth,
+		height = element.offsetHeight;
+
+		while (element.offsetParent) {
+			element = element.offsetParent;
+			top += element.offsetTop;
+			left += element.offsetLeft;
+		}
+		var percentage = ((window.pageYOffset + window.innerHeight) - top) / height * 100;
+
+		console.log(percentage > 100 ? 100 : (percentage < 0 ? 0 : percentage));
+
+		return percentage > 100 ? 100 : (percentage < 0 ? 0 : percentage);
+	}
+
 	function elementInViewport(element, offset) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
@@ -98,6 +116,7 @@
 			return $.isFunction(value) ? value.apply(element) : 
 			(wrap ? $(value) : value);
 		},
+		activeMarkers = [],
 		visible = null,
 		checking = false,
 		count = 0,
@@ -107,11 +126,14 @@
 			classHidden: data("hidden", "out-of-view"),
 			classInitial: data("initial", "initial-view"),
 			target: data("target", element),
-			offset: data("offset", '0').split(/\s*,\s*/)
+			offset: data("offset", '0'),
+			marker: data("marker", '')
 		};
 		options = $.extend({}, defaults, options);
 
-		var offsets = options.offset.length,
+		var offsetOrig = options.offset.split(/\s*,\s*/),
+		markerOrig = options.marker.split(/\s*,\s*/),
+		offsetCount = offsetOrig.length,
 		classInitial = $.isFunction(options.classInitial) ? 
 		options.classInitial.apply(element) : options.classInitial;
 
@@ -119,19 +141,19 @@
 		$element.trigger('initial-view');
 
 		var offset = { 
-			left: options.offset[0],
-			right: options.offset[0],
-			top: options.offset[0],
-			bottom: options.offset[0]
+			left: offsetOrig[0],
+			right: offsetOrig[0],
+			top: offsetOrig[0],
+			bottom: offsetOrig[0]
 		};
 
-		if (offsets == 4) {
-			offset.left = options.offset[3];
-			offset.right = options.offset[1];
-			offset.bottom = options.offset[2];
-		} else if (offsets == 2) {
-			offset.left = options.offset[1];
-			offset.right = options.offset[1];
+		if (offsetCount == 4) {
+			offset.left = offsetOrig[3];
+			offset.right = offsetOrig[1];
+			offset.bottom = offsetOrig[2];
+		} else if (offsetCount == 2) {
+			offset.left = offsetOrig[1];
+			offset.right = offsetOrig[1];
 		}
 		offset.left = parseFloat(data("offset-left", offset.left)) || 0;
 		offset.right = parseFloat(data("offset-right", offset.right)) || 0;
@@ -139,6 +161,37 @@
 		offset.top = parseFloat(data("offset-top", offset.top)) || 0;
 
 		options.offset = offset;
+
+		if (markerOrig[0] == "") {
+			markerOrig = [];
+		}
+		var marker = {},
+		markerCount = markerOrig.length;
+
+		$.each(markerOrig, function(index, item) {
+			item = parseFloat(item) || 0;
+
+			if (item <= 1) {
+				item *= 100;
+			}
+			marker[item] = item;
+		});
+
+		if (markerOrig.length) {
+			var first = parseFloat(markerOrig[0]) || 0;
+
+			if (markerCount === 1 && first > 0) {
+				if (first > 1) {
+					first /= 100;
+				}
+				for (var i = 0, l = 1 / first; i <= 100; i += l) {
+					marker[i] = i;
+				}
+			}
+			marker[0] = 0;
+			marker[100] = 100;
+		}
+		options.marker = marker;
 
 		this.check = function() {
 			if (checking) {
@@ -149,6 +202,17 @@
 			var isVisible = visible;
 
 			visible = $.isVisible(element, options.offset);
+
+			var percentage = $.visiblityPercentage(element),
+			$target = func(options.target, true);
+
+			$.each(marker, function(index, marker) {
+				if (marker > percentage) {
+					$target.removeClass('marker-' + marker);
+				} else if (marker <= percentage) {
+					$target.addClass('marker-' + marker);
+				}
+			});
 
 			if (isVisible == visible) {
 				checking = false;
@@ -162,8 +226,7 @@
 
 				if (!options.count || count++ < options.count) {
 					var classHidden = func(options.classHidden),
-					classVisible = func(options.classVisible),
-					$target = func(options.target, true);
+					classVisible = func(options.classVisible);
 
 					if ($target.length) {
 						$target.addClass(classVisible).removeClass(classHidden);
@@ -175,8 +238,7 @@
 
 				if (!options.count || count < options.count) {
 					var classHidden = func(options.classHidden),
-					classVisible = func(options.classVisible),
-					$target = func(options.target, true);
+					classVisible = func(options.classVisible);
 
 					if ($target.length) {
 						$target.addClass(classHidden).removeClass(classVisible);
@@ -215,6 +277,10 @@
 		} else {
 			return elements;
 		}
+	};
+
+	$.visiblityPercentage = function(element) {
+		return elementInViewportPercentage($(element).get(0));
 	};
 
 	$.isVisible = function(element, offset) {
