@@ -112,7 +112,7 @@
 			return $.isFunction(value) ? value.apply(element) : 
 			(wrap ? $(value) : value);
 		},
-		activeMarkers = [],
+		markerCounts = {},
 		visible = null,
 		checking = false,
 		count = 0,
@@ -123,13 +123,14 @@
 			classInitial: data("initial", "initial-view"),
 			target: data("target", element),
 			offset: data("offset", '0'),
-			marker: data("marker", '')
+			marker: data("marker", ''),
+			markerCount: parseInt(data("marker-count", 1))
 		};
 		options = $.extend({}, defaults, options);
 
 		var offsetOrig = options.offset.split(/\s*,\s*/),
 		markerOrig = options.marker.split(/\s*,\s*/),
-		offsetCount = offsetOrig.length,
+		offsetLength = offsetOrig.length,
 		classInitial = $.isFunction(options.classInitial) ? 
 		options.classInitial.apply(element) : options.classInitial;
 
@@ -143,11 +144,11 @@
 			bottom: offsetOrig[0]
 		};
 
-		if (offsetCount == 4) {
+		if (offsetLength == 4) {
 			offset.left = offsetOrig[3];
 			offset.right = offsetOrig[1];
 			offset.bottom = offsetOrig[2];
-		} else if (offsetCount == 2) {
+		} else if (offsetLength == 2) {
 			offset.left = offsetOrig[1];
 			offset.right = offsetOrig[1];
 		}
@@ -162,7 +163,7 @@
 			markerOrig = [];
 		}
 		var marker = {},
-		markerCount = markerOrig.length;
+		markerLength = markerOrig.length;
 
 		$.each(markerOrig, function(index, item) {
 			item = (parseFloat(item) || 0) * 100;
@@ -172,7 +173,7 @@
 		if (markerOrig.length) {
 			var values = markerOrig[0].match(/([0-9]+)\s*\/\s*([0-9]+)/);
 
-			if (markerCount === 1 && values) {
+			if (markerLength === 1 && values) {
 				var divider = parseFloat(values[2]) || 1,
 				divider = (parseFloat(values[1]) || 0) / (divider == 0 ? 1 : divider);
 
@@ -184,6 +185,8 @@
 			marker[100] = 100;
 		}
 		options.marker = marker;
+
+		console.log(options.markerCount);
 
 		this.check = function() {
 			if (checking) {
@@ -200,10 +203,14 @@
 			classVisible = func(options.classVisible);
 
 			$.each(marker, function(index, marker) {
-				if (marker > percentage) {
-					$target.removeClass(classVisible + '-' + marker);
-				} else if (marker <= percentage) {
+				if (typeof markerCounts[marker] === 'undefined') {
+					markerCounts[marker] = 0;
+				}
+				if (marker <= percentage && (!options.markerCount || markerCounts[marker]++ < options.markerCount)) {
 					$target.addClass(classVisible + '-' + marker);
+				}
+				if (marker > percentage && (!options.markerCount || markerCounts[marker] < options.markerCount)) {
+					$target.removeClass(classVisible + '-' + marker);
 				}
 			});
 
