@@ -9,7 +9,7 @@
 
 	"use strict";
 
-	function elementInViewport(element, inView, offset, direction) {
+	function elementInViewport(element, offset) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
 		width = element.offsetWidth,
@@ -17,17 +17,13 @@
 		offsetLeft = 0,
 		offsetRight = 0,
 		offsetTop = 0,
-		offsetBottom = 0,
-		inView = parseInt(inView) || 0;
+		offsetBottom = 0;
 
-		if (inView > 1) {
-			inView /= 100;
-		}
 		if (typeof offset !== 'undefined') {
-			offsetLeft = offset.left;
-			offsetRight = offset.right;
-			offsetTop = offset.top;
-			offsetBottom = offset.bottom;
+			offsetLeft = Math.abs(offset.left) > 1 ? offset.left : offset.left * width;
+			offsetRight = Math.abs(offset.right) > 1 ? offset.right : offset.right * width;
+			offsetTop = Math.abs(offset.top) > 1 ? offset.top : offset.top * height;
+			offsetBottom = Math.abs(offset.bottom) > 1 ? offset.bottom : offset.bottom * height;
 		}
 		while (element.offsetParent) {
 			element = element.offsetParent;
@@ -35,7 +31,7 @@
 			left += element.offsetLeft;
 		}
 		return (
-			(top + offsetTop + (inView * height)) < (window.pageYOffset + window.innerHeight) &&
+			(top + offsetTop) < (window.pageYOffset + window.innerHeight) &&
 			(left + offsetLeft) < (window.pageXOffset + window.innerWidth) &&
 			(top + height + offsetBottom) > window.pageYOffset &&
 			(left + width + offsetRight) > window.pageXOffset
@@ -111,8 +107,7 @@
 			classHidden: data("hidden", "out-of-view"),
 			classInitial: data("initial", "initial-view"),
 			target: data("target", element),
-			offset: data("offset", '0').split(/\s*,\s*/),
-			inView: parseInt(data("in-view", 0)) || 0
+			offset: data("offset", '0').split(/\s*,\s*/)
 		};
 		options = $.extend({}, defaults, options);
 
@@ -123,7 +118,7 @@
 		$element.addClass(classInitial);
 		$element.trigger('initial-view');
 
-		options.offset = { 
+		var offset = { 
 			left: options.offset[0],
 			right: options.offset[0],
 			top: options.offset[0],
@@ -131,17 +126,19 @@
 		};
 
 		if (offsets == 4) {
-			options.offset.left = options.offset[3];
-			options.offset.right = options.offset[1];
-			options.offset.bottom = options.offset[2];
+			offset.left = options.offset[3];
+			offset.right = options.offset[1];
+			offset.bottom = options.offset[2];
 		} else if (offsets == 2) {
-			options.offset.left = options.offset[1];
-			options.offset.right = options.offset[1];
+			offset.left = options.offset[1];
+			offset.right = options.offset[1];
 		}
-		options.offset.left = parseInt(data("offset-left", options.offset.left)) || 0;
-		options.offset.right = parseInt(data("offset-right", options.offset.right)) || 0;
-		options.offset.bottom = parseInt(data("offset-bottom", options.offset.bottom)) || 0;
-		options.offset.top = parseInt(data("offset-top", options.offset.top)) || 0;
+		offset.left = parseFloat(data("offset-left", offset.left)) || 0;
+		offset.right = parseFloat(data("offset-right", offset.right)) || 0;
+		offset.bottom = parseFloat(data("offset-bottom", offset.bottom)) || 0;
+		offset.top = parseFloat(data("offset-top", offset.top)) || 0;
+
+		options.offset = offset;
 
 		this.check = function() {
 			if (checking) {
@@ -151,7 +148,7 @@
 			
 			var isVisible = visible;
 
-			visible = $.isVisible(element, options.inView, options.offset, scrollDirection);
+			visible = $.isVisible(element, options.offset);
 
 			if (isVisible == visible) {
 				checking = false;
@@ -220,8 +217,8 @@
 		}
 	};
 
-	$.isVisible = function(element, inView, offset, direction) {
-		return elementInViewport($(element).get(0), inView, offset, direction);
+	$.isVisible = function(element, offset) {
+		return elementInViewport($(element).get(0), offset);
 	};
 
 	$(function() {
