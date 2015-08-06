@@ -9,7 +9,7 @@
 
 	"use strict";
 
-	function elementInViewportPercentage(element) {
+	function elementInViewportFactor(element) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
 		width = element.offsetWidth,
@@ -20,11 +20,7 @@
 			top += element.offsetTop;
 			left += element.offsetLeft;
 		}
-		var percentage = ((window.pageYOffset + window.innerHeight) - top) / height * 100;
-
-		console.log(percentage > 100 ? 100 : (percentage < 0 ? 0 : percentage));
-
-		return percentage > 100 ? 100 : (percentage < 0 ? 0 : percentage);
+		return ((window.pageYOffset + window.innerHeight) - top) / height;
 	}
 
 	function elementInViewport(element, offset) {
@@ -171,7 +167,7 @@
 		$.each(markerOrig, function(index, item) {
 			item = parseFloat(item) || 0;
 
-			if (item <= 1) {
+			if (Math.abs(item) <= 1) {
 				item *= 100;
 			}
 			marker[item] = item;
@@ -180,7 +176,7 @@
 		if (markerOrig.length) {
 			var first = parseFloat(markerOrig[0]) || 0;
 
-			if (markerCount === 1 && first > 0 && first <= 1) {
+			if (markerCount === 1 && Math.abs(first) > 0 && Math.abs(first) <= 1) {
 				for (var i = 0, l = 1 / first; i <= 100; i += l) {
 					marker[i] = i;
 				}
@@ -200,7 +196,7 @@
 
 			visible = $.isVisible(element, options.offset);
 
-			var percentage = $.visiblityPercentage(element),
+			var percentage = $.visiblityFactor(element) * 100,
 			$target = func(options.target, true),
 			classVisible = func(options.classVisible);
 
@@ -275,8 +271,8 @@
 		}
 	};
 
-	$.visiblityPercentage = function(element) {
-		return elementInViewportPercentage($(element).get(0));
+	$.visiblityFactor = function(element) {
+		return elementInViewportFactor($(element).get(0));
 	};
 
 	$.isVisible = function(element, offset) {
