@@ -165,19 +165,18 @@
 		markerCount = markerOrig.length;
 
 		$.each(markerOrig, function(index, item) {
-			item = parseFloat(item) || 0;
-
-			if (Math.abs(item) <= 1) {
-				item *= 100;
-			}
+			item = (parseFloat(item) || 0) * 100;
 			marker[item] = item;
 		});
 
 		if (markerOrig.length) {
-			var first = parseFloat(markerOrig[0]) || 0;
+			var values = markerOrig[0].match(/([0-9]+)\s*\/\s*([0-9]+)/);
 
-			if (markerCount === 1 && Math.abs(first) > 0 && Math.abs(first) <= 1) {
-				for (var i = 0, l = 1 / first; i <= 100; i += l) {
+			if (markerCount === 1 && values) {
+				var divider = parseFloat(values[2]) || 1,
+				divider = (parseFloat(values[1]) || 0) / (divider == 0 ? 1 : divider);
+
+				for (var i = 0, l = 1 / divider; i <= 100; i += l) {
 					marker[i] = i;
 				}
 			}
