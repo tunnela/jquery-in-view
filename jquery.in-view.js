@@ -180,10 +180,7 @@
 		if (markerOrig.length) {
 			var first = parseFloat(markerOrig[0]) || 0;
 
-			if (markerCount === 1 && first > 0) {
-				if (first > 1) {
-					first /= 100;
-				}
+			if (markerCount === 1 && first > 0 && first <= 1) {
 				for (var i = 0, l = 1 / first; i <= 100; i += l) {
 					marker[i] = i;
 				}
