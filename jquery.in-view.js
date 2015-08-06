@@ -9,22 +9,32 @@
 
 	"use strict";
 
-	function elementInViewport(element) {
+	function elementInViewport(element, offset) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
 		width = element.offsetWidth,
-		height = element.offsetHeight;
+		height = element.offsetHeight,
+		offsetLeft = 0,
+		offsetRight = 0,
+		offsetTop = 0,
+		offsetBottom = 0;
 
+		if (typeof offset !== 'undefined') {
+			offsetLeft = offset.left;
+			offsetRight = offset.right;
+			offsetTop = offset.top;
+			offsetBottom = offset.bottom;
+		}
 		while (element.offsetParent) {
 			element = element.offsetParent;
 			top += element.offsetTop;
 			left += element.offsetLeft;
 		}
 		return (
-			top < (window.pageYOffset + window.innerHeight) &&
-			left < (window.pageXOffset + window.innerWidth) &&
-			(top + height) > window.pageYOffset &&
-			(left + width) > window.pageXOffset
+			(top + offsetTop) < (window.pageYOffset + window.innerHeight) &&
+			(left + offsetLeft) < (window.pageXOffset + window.innerWidth) &&
+			(top + height + offsetBottom) > window.pageYOffset &&
+			(left + width + offsetRight) > window.pageXOffset
 		);
 	}
 	var	attached = false,
@@ -79,15 +89,37 @@
 			classVisible: data("visible", "in-view"),
 			classHidden: data("hidden", "out-of-view"),
 			classInitial: data("initial", "initial-view"),
-			target: data("target", element)
+			target: data("target", element),
+			offset: data("offset", '0').split(/\s*,\s*/)
 		};
 		options = $.extend({}, defaults, options);
 
-		var classInitial = $.isFunction(options.classInitial) ? 
+		var offsets = options.offset.length,
+		classInitial = $.isFunction(options.classInitial) ? 
 		options.classInitial.apply(element) : options.classInitial;
 
 		$element.addClass(classInitial);
 		$element.trigger('initial-view');
+
+		options.offset = { 
+			left: options.offset[0],
+			right: options.offset[0],
+			top: options.offset[0],
+			bottom: options.offset[0]
+		};
+
+		if (offsets == 4) {
+			options.offset.left = options.offset[3];
+			options.offset.right = options.offset[1];
+			options.offset.bottom = options.offset[2];
+		} else if (offsets == 2) {
+			options.offset.left = options.offset[1];
+			options.offset.right = options.offset[1];
+		}
+		options.offset.left = parseInt(data("offset-left", options.offset.left)) || 0;
+		options.offset.right = parseInt(data("offset-right", options.offset.right)) || 0;
+		options.offset.bottom = parseInt(data("offset-bottom", options.offset.bottom)) || 0;
+		options.offset.top = parseInt(data("offset-top", options.offset.top)) || 0;
 
 		this.check = function() {
 			if (checking) {
@@ -96,7 +128,8 @@
 			checking = true;
 			
 			var isVisible = visible;
-			visible = $.isVisible(element);
+
+			visible = $.isVisible(element, options.offset);
 
 			if (isVisible == visible) {
 				checking = false;
@@ -165,8 +198,8 @@
 		}
 	};
 
-	$.isVisible = function(element) {
-		return elementInViewport($(element).get(0));
+	$.isVisible = function(element, offset) {
+		return elementInViewport($(element).get(0), offset);
 	};
 
 	$(function() {
