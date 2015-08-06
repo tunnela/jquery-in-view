@@ -204,13 +204,14 @@
 			visible = $.isVisible(element, options.offset);
 
 			var percentage = $.visiblityPercentage(element),
-			$target = func(options.target, true);
+			$target = func(options.target, true),
+			classVisible = func(options.classVisible);
 
 			$.each(marker, function(index, marker) {
 				if (marker > percentage) {
-					$target.removeClass('marker-' + marker);
+					$target.removeClass(classVisible + '-' + marker);
 				} else if (marker <= percentage) {
-					$target.addClass('marker-' + marker);
+					$target.addClass(classVisible + '-' + marker);
 				}
 			});
 
@@ -225,8 +226,7 @@
 				$element.trigger('in-view');
 
 				if (!options.count || count++ < options.count) {
-					var classHidden = func(options.classHidden),
-					classVisible = func(options.classVisible);
+					var classHidden = func(options.classHidden);
 
 					if ($target.length) {
 						$target.addClass(classVisible).removeClass(classHidden);
@@ -237,8 +237,7 @@
 				$element.trigger('out-of-view');
 
 				if (!options.count || count < options.count) {
-					var classHidden = func(options.classHidden),
-					classVisible = func(options.classVisible);
+					var classHidden = func(options.classHidden);
 
 					if ($target.length) {
 						$target.addClass(classHidden).removeClass(classVisible);
