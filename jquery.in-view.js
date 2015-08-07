@@ -9,7 +9,13 @@
 
 	"use strict";
 
-	function elementInViewportFactor(element) {
+	function viewportVisibilityFactor(element) {
+		var rect = element.getBoundingClientRect();
+
+		return 1 - rect.top / window.innerHeight;
+	}
+
+	function visibilityFactor(element) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
 		width = element.offsetWidth,
@@ -23,7 +29,7 @@
 		return ((window.pageYOffset + window.innerHeight) - top) / height;
 	}
 
-	function elementInViewport(element, offset) {
+	function inViewport(element, offset) {
 		var top = element.offsetTop,
 		left = element.offsetLeft,
 		width = element.offsetWidth,
@@ -91,6 +97,36 @@
 	},
 	isInViewObject = function(obj) {
 		return obj instanceof InView;
+	},
+	solveMarker = function(optMarker) {
+		var markerOrig = optMarker.split(/\s*,\s*/);
+
+		if (markerOrig[0] == "") {
+			markerOrig = [];
+		}
+		var marker = {},
+		markerLength = markerOrig.length;
+
+		$.each(markerOrig, function(index, item) {
+			item = (parseFloat(item) || 0) * 100;
+			marker[item] = item;
+		});
+
+		if (markerOrig.length) {
+			var values = markerOrig[0].match(/([0-9]+)\s*\/\s*([0-9]+)/);
+
+			if (markerLength === 1 && values) {
+				var divider = parseFloat(values[2]) || 1,
+				divider = (parseFloat(values[1]) || 0) / (divider == 0 ? 1 : divider);
+
+				for (var i = 0, l = 1 / divider; i <= 100; i += l) {
+					marker[i] = i;
+				}
+			}
+			marker[0] = 0;
+			marker[100] = 100;
+		}
+		return marker;
 	};
 
 	function InView(element, options) {
@@ -113,6 +149,7 @@
 			(wrap ? $(value) : value);
 		},
 		markerCounts = {},
+		viewportMarkerCounts = {},
 		visible = null,
 		checking = false,
 		count = 0,
@@ -124,12 +161,13 @@
 			target: data("target", element),
 			offset: data("offset", '0'),
 			marker: data("marker", ''),
-			markerCount: parseInt(data("marker-count", 1))
+			markerCount: parseInt(data("marker-count", 1)),
+			viewportMarker: data("viewport-marker", ''),
+			viewportMarkerCount: parseInt(data("viewport-marker-count", 1))
 		};
 		options = $.extend({}, defaults, options);
 
 		var offsetOrig = options.offset.split(/\s*,\s*/),
-		markerOrig = options.marker.split(/\s*,\s*/),
 		offsetLength = offsetOrig.length,
 		classInitial = $.isFunction(options.classInitial) ? 
 		options.classInitial.apply(element) : options.classInitial;
@@ -158,35 +196,8 @@
 		offset.top = parseFloat(data("offset-top", offset.top)) || 0;
 
 		options.offset = offset;
-
-		if (markerOrig[0] == "") {
-			markerOrig = [];
-		}
-		var marker = {},
-		markerLength = markerOrig.length;
-
-		$.each(markerOrig, function(index, item) {
-			item = (parseFloat(item) || 0) * 100;
-			marker[item] = item;
-		});
-
-		if (markerOrig.length) {
-			var values = markerOrig[0].match(/([0-9]+)\s*\/\s*([0-9]+)/);
-
-			if (markerLength === 1 && values) {
-				var divider = parseFloat(values[2]) || 1,
-				divider = (parseFloat(values[1]) || 0) / (divider == 0 ? 1 : divider);
-
-				for (var i = 0, l = 1 / divider; i <= 100; i += l) {
-					marker[i] = i;
-				}
-			}
-			marker[0] = 0;
-			marker[100] = 100;
-		}
-		options.marker = marker;
-
-		console.log(options.markerCount);
+		options.marker = solveMarker(options.marker);
+		options.viewportMarker = solveMarker(options.viewportMarker);
 
 		this.check = function() {
 			if (checking) {
@@ -199,10 +210,11 @@
 			visible = $.isVisible(element, options.offset);
 
 			var percentage = $.visiblityFactor(element) * 100,
+			viewportPercentage = $.viewportVisiblityFactor(element) * 100,
 			$target = func(options.target, true),
 			classVisible = func(options.classVisible);
 
-			$.each(marker, function(index, marker) {
+			$.each(options.marker, function(index, marker) {
 				if (typeof markerCounts[marker] === 'undefined') {
 					markerCounts[marker] = 0;
 				}
@@ -211,6 +223,18 @@
 				}
 				if (marker > percentage && (!options.markerCount || markerCounts[marker] < options.markerCount)) {
 					$target.removeClass(classVisible + '-' + marker);
+				}
+			});
+
+			$.each(options.viewportMarker, function(index, marker) {
+				if (typeof viewportMarkerCounts[marker] === 'undefined') {
+					viewportMarkerCounts[marker] = 0;
+				}
+				if (marker <= viewportPercentage && (!options.viewportMarkerCount || viewportMarkerCounts[marker]++ < options.viewportMarkerCount)) {
+					$target.addClass(classVisible + '-viewport-' + marker);
+				}
+				if (marker > viewportPercentage && (!options.viewportMarkerCount || viewportMarkerCounts[marker] < options.viewportMarkerCount)) {
+					$target.removeClass(classVisible + '-viewport-' + marker);
 				}
 			});
 
@@ -278,11 +302,15 @@
 	};
 
 	$.visiblityFactor = function(element) {
-		return elementInViewportFactor($(element).get(0));
+		return visibilityFactor($(element).get(0));
+	};
+
+	$.viewportVisiblityFactor = function(element) {
+		return viewportVisibilityFactor($(element).get(0));
 	};
 
 	$.isVisible = function(element, offset) {
-		return elementInViewport($(element).get(0), offset);
+		return inViewport($(element).get(0), offset);
 	};
 
 	$(function() {
