@@ -1,0 +1,23 @@
+{
+  "name": "jquery-in-view",
+  "description": "jQuery/Zepto plugin for detecting HTML elements in view or out of view.",
+  "homepage": "https://github.com/tunnela/jquery-in-view",
+  "authors": [
+    "Lauri Tunnela <lauri@tunne.la> (http://tunne.la)"
+  ],
+  "main": "jquery.in-view.min.js",
+  "keywords": [
+    "inview",
+    "detect",
+    "jquery",
+    "zepto"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
